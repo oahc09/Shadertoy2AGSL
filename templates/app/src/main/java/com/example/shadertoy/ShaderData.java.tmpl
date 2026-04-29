@@ -1,0 +1,22 @@
+package com.example.shadertoy;
+
+/**
+ * Data class holding shader information.
+ */
+public class ShaderData {
+    private final String name;
+    private final String agslCode;
+
+    public ShaderData(String name, String agslCode) {
+        this.name = name;
+        this.agslCode = agslCode;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getAgslCode() {
+        return agslCode;
+    }
+}

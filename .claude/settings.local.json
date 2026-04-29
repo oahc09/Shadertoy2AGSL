@@ -4,7 +4,15 @@
       "Bash(python -m pytest --co -q)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git rm *)",
+      "Bash(python -m pytest tests/patterns/test_entry.py -v)",
+      "Bash(python -m pytest -v)",
+      "Bash(python -m pytest tests/patterns/test_uniforms.py -v)",
+      "Bash(python -m pytest tests/patterns/test_types.py -v)",
+      "Bash(python -m pytest tests/patterns/test_textures.py -v)",
+      "Bash(python -m pytest tests/patterns/test_preprocessor.py -v)",
+      "Bash(python -m pytest tests/patterns/test_coordinates.py -v)"
     ]
   }
 }

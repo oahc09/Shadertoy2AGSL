@@ -1,0 +1,146 @@
+package com.example.shadertoy;
+
+import android.animation.ValueAnimator;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RuntimeShader;
+import android.view.MotionEvent;
+import android.view.View;
+
+import android.view.animation.LinearInterpolator;
+
+/**
+ * Custom View that renders an AGSL shader with animation support.
+ */
+public class ShaderView extends View {
+
+    private RuntimeShader shader;
+    private final Paint paint = new Paint();
+    private ValueAnimator timeAnimator;
+    private float elapsedTime = 0f;
+    private boolean isPlaying = true;
+    private float speedMultiplier = 1.0f;
+    private float lastTimestamp = 0f;
+    private float iMouseX = 0f;
+    private float iMouseY = 0f;
+    private float iMouseZ = 0f;
+    private float iMouseW = 0f;
+
+    public ShaderView(Context context, String agslCode) {
+        super(context);
+        initShader(agslCode);
+    }
+
+    private void initShader(String agslCode) {
+        try {
+            shader = new RuntimeShader(agslCode);
+            paint.setShader(shader);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        startTimeAnimation();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        stopTimeAnimation();
+    }
+
+    private void startTimeAnimation() {
+        timeAnimator = ValueAnimator.ofFloat(0f, 1f);
+        timeAnimator.setDuration(Long.MAX_VALUE);
+        timeAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        timeAnimator.setInterpolator(new LinearInterpolator());
+        timeAnimator.addUpdateListener(animation -> {
+            float currentTimestamp = (float) animation.getAnimatedValue() * 1000f;
+            float delta = (currentTimestamp - lastTimestamp) * speedMultiplier;
+            if (delta > 0 && delta < 100f) {
+                elapsedTime += delta / 1000f;
+            }
+            lastTimestamp = currentTimestamp;
+            invalidate();
+        });
+        timeAnimator.start();
+    }
+
+    private void stopTimeAnimation() {
+        if (timeAnimator != null) {
+            timeAnimator.cancel();
+            timeAnimator = null;
+        }
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        if (shader == null) return;
+
+        int w = getWidth();
+        int h = getHeight();
+        if (w == 0 || h == 0) return;
+
+        shader.setFloatUniform("iResolution", (float) w, (float) h, 1.0f);
+        shader.setFloatUniform("iTime", elapsedTime);
+        shader.setFloatUniform("iMouse", iMouseX, iMouseY, iMouseZ, iMouseW);
+
+        canvas.drawPaint(paint);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        float x = event.getX();
+        float y = event.getY();
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                iMouseX = x;
+                iMouseY = y;
+                iMouseZ = x;
+                iMouseW = y;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                iMouseX = x;
+                iMouseY = y;
+                break;
+            case MotionEvent.ACTION_UP:
+                iMouseZ = -Math.abs(iMouseZ);
+                iMouseW = -Math.abs(iMouseW);
+                break;
+        }
+        return true;
+    }
+
+    public void togglePlayPause() {
+        isPlaying = !isPlaying;
+        if (isPlaying) {
+            startTimeAnimation();
+        } else {
+            stopTimeAnimation();
+        }
+    }
+
+    public boolean isPlaying() {
+        return isPlaying;
+    }
+
+    public void setSpeed(float multiplier) {
+        this.speedMultiplier = multiplier;
+    }
+
+    public float getSpeed() {
+        return speedMultiplier;
+    }
+
+    public void reset() {
+        elapsedTime = 0f;
+        lastTimestamp = 0f;
+        invalidate();
+    }
+}

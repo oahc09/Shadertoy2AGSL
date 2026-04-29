@@ -1,0 +1,101 @@
+package com.example.shadertoy;
+
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.SeekBar;
+import android.widget.TextView;
+
+/**
+ * Control panel for shader playback: play/pause, speed slider, screenshot.
+ */
+public class ShaderControls {
+
+    public interface ControlListener {
+        void onPlayPauseToggle();
+        void onSpeedChanged(float speed);
+        void onScreenshot();
+    }
+
+    private final View rootView;
+    private final ImageButton playPauseButton;
+    private final SeekBar speedSeekBar;
+    private final TextView speedLabel;
+    private final ImageButton screenshotButton;
+    private final TextView shaderNameLabel;
+    private ControlListener listener;
+
+    public ShaderControls(Context context, View rootView) {
+        this.rootView = rootView;
+        this.playPauseButton = rootView.findViewById(R.id.btn_play_pause);
+        this.speedSeekBar = rootView.findViewById(R.id.seek_speed);
+        this.speedLabel = rootView.findViewById(R.id.label_speed);
+        this.screenshotButton = rootView.findViewById(R.id.btn_screenshot);
+        this.shaderNameLabel = rootView.findViewById(R.id.label_shader_name);
+
+        setupListeners();
+    }
+
+    private void setupListeners() {
+        playPauseButton.setOnClickListener(v -> {
+            if (listener != null) listener.onPlayPauseToggle();
+            updatePlayPauseIcon(true);
+        });
+
+        speedSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                float speed = progressToSpeed(progress);
+                speedLabel.setText(String.format("%.2fx", speed));
+                if (listener != null) listener.onSpeedChanged(speed);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        screenshotButton.setOnClickListener(v -> {
+            if (listener != null) listener.onScreenshot();
+        });
+    }
+
+    public void setListener(ControlListener listener) {
+        this.listener = listener;
+    }
+
+    public void setShaderName(String name) {
+        if (shaderNameLabel != null) {
+            shaderNameLabel.setText(name);
+        }
+    }
+
+    public void updatePlayPauseIcon(boolean isPlaying) {
+        playPauseButton.setImageResource(
+            isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play
+        );
+    }
+
+    /**
+     * Convert seek bar progress (0-100) to speed multiplier (0.25x - 4.0x).
+     * Uses exponential mapping: speed = 0.25 * 2^(progress/25).
+     */
+    private float progressToSpeed(int progress) {
+        return 0.25f * (float) Math.pow(2.0, progress / 25.0);
+    }
+
+    /**
+     * Convert speed multiplier back to seek bar progress.
+     */
+    private int speedToProgress(float speed) {
+        return (int) (25.0 * Math.log(speed / 0.25) / Math.log(2.0));
+    }
+
+    public void setSpeed(float speed) {
+        speedSeekBar.setProgress(speedToProgress(speed));
+        speedLabel.setText(String.format("%.2fx", speed));
+    }
+}
