@@ -41,7 +41,12 @@ public class MainActivity extends AppCompatActivity implements ShaderControls.Co
     }
 
     private void loadShaders() {
+        List<ShaderData> shaderDataList = new ArrayList<>();
         {{shader_loading_code}}
+
+        for (ShaderData data : shaderDataList) {
+            shaderViews.add(new ShaderView(this, data.getAgslCode()));
+        }
     }
 
     private void setupViewPager() {
