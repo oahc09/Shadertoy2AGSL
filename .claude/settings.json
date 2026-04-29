@@ -1,0 +1,8 @@
+{
+  "skills": {
+    "shadertoy2agsl": {
+      "path": ".claude/skills/shadertoy2agsl.md",
+      "trigger": "shadertoy2agsl"
+    }
+  }
+}
