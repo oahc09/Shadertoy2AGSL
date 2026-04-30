@@ -1,16 +1,16 @@
 """Tests for the uniforms pattern: inject AGSL uniform declarations."""
 import pytest
-from rules.patterns.uniforms import inject_uniforms
+from scripts.rules.patterns.uniforms import inject_uniforms
 
 
 class TestInjectUniforms:
     """Test suite for uniform declaration injection."""
 
     def test_injects_iResolution(self):
-        """iResolution usage triggers uniform float2 iResolution declaration."""
+        """iResolution usage triggers uniform float3 iResolution declaration."""
         glsl = "vec2 uv = fragCoord / iResolution.xy;"
         result, injected = inject_uniforms(glsl)
-        assert "uniform float2 iResolution;" in result
+        assert "uniform float3 iResolution;" in result
         assert injected == ["iResolution"]
 
     def test_injects_iTime(self):
@@ -31,7 +31,7 @@ class TestInjectUniforms:
         """Multiple uniforms are all injected."""
         glsl = "vec2 uv = fragCoord / iResolution.xy;\nfloat t = iTime;"
         result, injected = inject_uniforms(glsl)
-        assert "uniform float2 iResolution;" in result
+        assert "uniform float3 iResolution;" in result
         assert "uniform float iTime;" in result
         assert set(injected) == {"iResolution", "iTime"}
 
@@ -44,9 +44,9 @@ class TestInjectUniforms:
 
     def test_does_not_duplicate_existing_declarations(self):
         """If uniform is already declared, it is not injected again."""
-        glsl = "uniform float2 iResolution;\nvec2 uv = fragCoord / iResolution.xy;"
+        glsl = "uniform float3 iResolution;\nvec2 uv = fragCoord / iResolution.xy;"
         result, injected = inject_uniforms(glsl)
-        assert result.count("uniform float2 iResolution;") == 1
+        assert result.count("uniform float3 iResolution;") == 1
 
     def test_injects_iFrame(self):
         """iFrame usage triggers uniform float iFrame declaration."""
@@ -74,10 +74,10 @@ class TestInjectUniforms:
         glsl = "// My shader\nvec2 uv = fragCoord / iResolution.xy;"
         result, injected = inject_uniforms(glsl)
         lines = result.strip().split("\n")
-        assert lines[0] == "uniform float2 iResolution;"
+        assert lines[0] == "uniform float3 iResolution;"
 
     def test_does_not_false_match_partial_names(self):
         """Names like iResolutionScale should not trigger iResolution injection."""
         glsl = "float iResolutionScale = 2.0;"
         result, injected = inject_uniforms(glsl)
-        assert "uniform float2 iResolution;" not in result
+        assert "uniform float3 iResolution;" not in result

@@ -1,8 +1,8 @@
 """Integration tests: end-to-end GLSL -> AGSL -> Android project pipeline."""
 import os
 import pytest
-from converter import convert
-from project_generator import generate_project, GenerationConfig
+from scripts.converter import convert
+from scripts.project_generator import generate_project, GenerationConfig
 
 
 class TestFullPipeline:
@@ -21,11 +21,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         # Step 1: Convert.
         output = convert(glsl)
         assert output.needs_ai_fallback is False
-        assert "half4 main(float2 fragCoord)" in output.agsl_code
-        assert "uniform float2 iResolution;" in output.agsl_code
+        assert "float4 main(float2 fragCoord)" in output.agsl_code
+        assert "uniform float3 iResolution;" in output.agsl_code
         assert "fragCoord.y = iResolution.y - fragCoord.y;" in output.agsl_code
-        assert "half2 uv" in output.agsl_code
-        assert "return half4(" in output.agsl_code
+        assert "float2 uv" in output.agsl_code
+        assert "return float4(" in output.agsl_code
         assert "entry" in output.report["applied_rules"]
         assert "types" in output.report["applied_rules"]
         assert "uniforms" in output.report["applied_rules"]
@@ -62,12 +62,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 """
         output = convert(glsl)
         assert output.needs_ai_fallback is False
-        assert "const half SPEED = 2.0;" in output.agsl_code
+        assert "const float SPEED = 2.0;" in output.agsl_code
         assert "uniform float iTime;" in output.agsl_code
-        assert "uniform float2 iResolution;" in output.agsl_code
-        assert "half2 uv" in output.agsl_code
-        assert "half t" in output.agsl_code
-        assert "half3 color" in output.agsl_code
+        assert "uniform float3 iResolution;" in output.agsl_code
+        assert "float2 uv" in output.agsl_code
+        assert "float t" in output.agsl_code
+        assert "float3 color" in output.agsl_code
 
         config = GenerationConfig(
             app_name="AnimatedShader",
@@ -140,15 +140,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 """
         output = convert(glsl)
         assert output.needs_ai_fallback is False
-        assert "const half PI = 3.14159;" in output.agsl_code
-        assert "const half TAU = 6.28318;" in output.agsl_code
-        assert "uniform float2 iResolution;" in output.agsl_code
+        assert "const float PI = 3.14159;" in output.agsl_code
+        assert "const float TAU = 6.28318;" in output.agsl_code
+        assert "uniform float3 iResolution;" in output.agsl_code
         assert "uniform float iTime;" in output.agsl_code
-        assert "half4 main(float2 fragCoord)" in output.agsl_code
+        assert "float4 main(float2 fragCoord)" in output.agsl_code
         assert "fragCoord.y = iResolution.y - fragCoord.y;" in output.agsl_code
-        assert "half2x2 rot" in output.agsl_code
-        assert "half4(" in output.agsl_code
-        assert "half3(" in output.agsl_code
+        assert "float2x2 rot" in output.agsl_code
+        assert "float4(" in output.agsl_code
+        assert "float3(" in output.agsl_code
 
         config = GenerationConfig(
             app_name="ComplexShader",

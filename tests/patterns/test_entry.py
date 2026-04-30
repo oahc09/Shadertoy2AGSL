@@ -1,6 +1,6 @@
 """Tests for the entry pattern: mainImage → main conversion."""
 import pytest
-from rules.patterns.entry import convert_entry
+from scripts.rules.patterns.entry import convert_entry
 
 
 class TestConvertEntry:
@@ -10,7 +10,7 @@ class TestConvertEntry:
         """Single-line mainImage signature is converted to main."""
         glsl = "void mainImage(out vec4 fragColor, in vec2 fragCoord) {"
         result, applied = convert_entry(glsl)
-        assert "half4 main(float2 fragCoord)" in result
+        assert "float4 main(float2 fragCoord)" in result
         assert "void mainImage" not in result
         assert applied is True
 
@@ -24,7 +24,7 @@ class TestConvertEntry:
             "{"
         )
         result, applied = convert_entry(glsl)
-        assert "half4 main(float2 fragCoord)" in result
+        assert "float4 main(float2 fragCoord)" in result
         assert "void mainImage" not in result
         assert applied is True
 

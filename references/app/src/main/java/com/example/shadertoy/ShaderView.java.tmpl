@@ -1,0 +1,154 @@
+package com.example.shadertoy;
+
+import android.animation.ValueAnimator;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RuntimeShader;
+import android.os.SystemClock;
+import android.view.MotionEvent;
+import android.view.View;
+
+/**
+ * Custom View that renders an AGSL shader with animation support.
+ */
+public class ShaderView extends View {
+
+    private RuntimeShader shader;
+    private final Paint paint = new Paint();
+    private ValueAnimator frameAnimator;
+    private float elapsedTime = 0f;
+    private boolean isPlaying = true;
+    private float speedMultiplier = 1.0f;
+    private long lastFrameTime = 0L;
+    private float iMouseX = 0f;
+    private float iMouseY = 0f;
+    private float iMouseZ = 0f;
+    private float iMouseW = 0f;
+
+    public ShaderView(Context context, String agslCode) {
+        super(context);
+        initShader(agslCode);
+    }
+
+    private void initShader(String agslCode) {
+        try {
+            shader = new RuntimeShader(agslCode);
+            paint.setShader(shader);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        startAnimation();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        stopAnimation();
+    }
+
+    private void startAnimation() {
+        lastFrameTime = SystemClock.uptimeMillis();
+        // Use a short-duration looping animator as a frame ticker.
+        // The animator itself doesn't drive time; we read wall-clock millis.
+        frameAnimator = ValueAnimator.ofFloat(0f, 1f);
+        frameAnimator.setDuration(20); // ~50 fps tick
+        frameAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        frameAnimator.addUpdateListener(animation -> {
+            long now = SystemClock.uptimeMillis();
+            float deltaSeconds = (now - lastFrameTime) / 1000f;
+            lastFrameTime = now;
+            if (deltaSeconds > 0 && deltaSeconds < 0.1f) {
+                elapsedTime += deltaSeconds * speedMultiplier;
+            }
+            invalidate();
+        });
+        frameAnimator.start();
+    }
+
+    private void stopAnimation() {
+        if (frameAnimator != null) {
+            frameAnimator.cancel();
+            frameAnimator = null;
+        }
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        if (shader == null) return;
+
+        int w = getWidth();
+        int h = getHeight();
+        if (w == 0 || h == 0) return;
+
+        shader.setFloatUniform("iResolution", (float) w, (float) h, 1.0f);
+        shader.setFloatUniform("iTime", elapsedTime);
+        shader.setFloatUniform("iMouse", iMouseX, iMouseY, iMouseZ, iMouseW);
+
+        canvas.drawPaint(paint);
+    }
+
+    @Override
+    public boolean performClick() {
+        return super.performClick();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        float x = event.getX();
+        // Flip Y to match Shadertoy convention (Y=0 at bottom, not top).
+        float y = getHeight() - event.getY();
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                iMouseX = x;
+                iMouseY = y;
+                iMouseZ = x;
+                iMouseW = y;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                iMouseX = x;
+                iMouseY = y;
+                break;
+            case MotionEvent.ACTION_UP:
+                iMouseZ = -Math.abs(iMouseZ);
+                iMouseW = -Math.abs(iMouseW);
+                performClick();
+                break;
+        }
+        return true;
+    }
+
+    public void togglePlayPause() {
+        isPlaying = !isPlaying;
+        if (isPlaying) {
+            startAnimation();
+        } else {
+            stopAnimation();
+        }
+    }
+
+    public boolean isPlaying() {
+        return isPlaying;
+    }
+
+    public void setSpeed(float multiplier) {
+        this.speedMultiplier = multiplier;
+    }
+
+    public float getSpeed() {
+        return speedMultiplier;
+    }
+
+    public void reset() {
+        elapsedTime = 0f;
+        lastFrameTime = SystemClock.uptimeMillis();
+        invalidate();
+    }
+}

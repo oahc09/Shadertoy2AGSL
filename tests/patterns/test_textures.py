@@ -1,6 +1,6 @@
 """Tests for the textures pattern: sampler2D → shader, texture() → .eval()."""
 import pytest
-from rules.patterns.textures import convert_textures
+from scripts.rules.patterns.textures import convert_textures
 
 
 class TestConvertTextures:
@@ -48,7 +48,7 @@ class TestConvertTextures:
 
     def test_no_textures_returns_unchanged(self):
         """If no texture usage found, input is returned unchanged."""
-        glsl = "half4 main(float2 fragCoord) { return half4(1.0); }"
+        glsl = "float4 main(float2 fragCoord) { return float4(1.0); }"
         result, applied = convert_textures(glsl)
         assert result == glsl
         assert applied is False

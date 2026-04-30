@@ -1,6 +1,6 @@
 """Tests for the rule engine: orchestrates all patterns and markers."""
 import pytest
-from rules.engine import ConversionResult, convert_shader
+from scripts.rules.engine import ConversionResult, convert_shader
 
 
 class TestConvertShader:
@@ -18,15 +18,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         result = convert_shader(glsl)
         assert isinstance(result, ConversionResult)
         # Entry converted.
-        assert "half4 main(float2 fragCoord)" in result.code
+        assert "float4 main(float2 fragCoord)" in result.code
         assert "void mainImage" not in result.code
         # Types converted.
-        assert "half2 uv" in result.code
-        assert "half4(" in result.code
+        assert "float2 uv" in result.code
+        assert "float4(" in result.code
         # Coordinates flipped.
         assert "fragCoord.y = iResolution.y - fragCoord.y;" in result.code
         # Uniforms injected.
-        assert "uniform float2 iResolution;" in result.code
+        assert "uniform float3 iResolution;" in result.code
         # FragColor replaced.
         assert "return " in result.code
         assert "fragColor = " not in result.code
@@ -64,14 +64,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 }
 """
         result = convert_shader(glsl)
-        assert "const half PI = 3.14159;" in result.code
+        assert "const float PI = 3.14159;" in result.code
         assert "uniform float iTime;" in result.code
-        assert "uniform float2 iResolution;" in result.code
-        assert "half2 uv" in result.code
-        assert "half t" in result.code
-        assert "half2x2 rot" in result.code
-        assert "half4(" in result.code
-        assert "half3(" in result.code
+        assert "uniform float3 iResolution;" in result.code
+        assert "float2 uv" in result.code
+        assert "float t" in result.code
+        assert "float2x2 rot" in result.code
+        assert "float4(" in result.code
+        assert "float3(" in result.code
 
     def test_report_contains_applied_rules(self):
         """The conversion report lists which rules were applied."""
@@ -110,8 +110,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
     def test_no_main_image_shader(self):
         """A shader without mainImage is still processed for types etc."""
-        glsl = "float helper(float x) { return x * 2.0; }"
+        glsl = "vec3 helper(vec3 x) { return x * 2.0; }"
         result = convert_shader(glsl)
-        assert "half helper(half x)" in result.code
+        assert "float3 helper(float3 x)" in result.code
         assert "entry" not in result.report.applied_rules
         assert "types" in result.report.applied_rules

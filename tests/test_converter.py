@@ -1,6 +1,6 @@
 """Tests for the top-level converter: engine + AI fallback orchestration."""
 import pytest
-from converter import ConverterOutput, convert, needs_ai_fallback
+from scripts.converter import ConverterOutput, convert, needs_ai_fallback
 
 
 class TestConvert:
@@ -72,7 +72,7 @@ class TestNeedsAiFallback:
 
     def test_returns_false_for_clean_code(self):
         """Clean code does not need AI fallback."""
-        glsl = "half4 main(float2 fragCoord) { return half4(1.0); }"
+        glsl = "float4 main(float2 fragCoord) { return float4(1.0); }"
         assert needs_ai_fallback(glsl) is False
 
     def test_returns_true_for_discard(self):
