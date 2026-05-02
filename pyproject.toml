@@ -1,0 +1,9 @@
+[project]
+name = "shadertoy2agsl"
+version = "1.0.0"
+description = "Convert Shadertoy GLSL shaders to Android AGSL and generate standalone Android projects"
+requires-python = ">=3.10"
+license = "MIT"
+
+[project.scripts]
+shadertoy2agsl = "scripts.generate_android_project:main"

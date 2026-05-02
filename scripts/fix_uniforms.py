@@ -2,7 +2,8 @@
 import re
 from pathlib import Path
 
-p = Path("D:/AI/Shadertoy2AGSL/output/StarNestApp/app/src/main/java/com/example/shadertoy/MainActivity.java")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+p = PROJECT_ROOT / "output/StarNestApp/app/src/main/java/com/example/shadertoy/MainActivity.java"
 content = p.read_text(encoding="utf-8")
 
 # Strip 'uniform ' from all uniform declarations in the Java string literals

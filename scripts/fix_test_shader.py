@@ -1,7 +1,8 @@
 """Add a test shader to MainActivity for UI verification."""
 import pathlib
 
-p = pathlib.Path('output/StarNestApp/app/src/main/java/com/example/shadertoy/MainActivity.java')
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
+p = PROJECT_ROOT / 'output/StarNestApp/app/src/main/java/com/example/shadertoy/MainActivity.java'
 content = p.read_text(encoding='utf-8')
 
 # Simple test shader that's guaranteed to work in AGSL

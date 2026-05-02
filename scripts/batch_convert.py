@@ -60,6 +60,8 @@ def batch_convert(input_dir: str, output_file: str | None = None) -> list[dict]:
 
 
 if __name__ == "__main__":
-    input_dir = sys.argv[1] if len(sys.argv) > 1 else "D:/AI/Shadertoy/generated_shaders_100"
-    output_file = sys.argv[2] if len(sys.argv) > 2 else None
+    _root = Path(__file__).resolve().parent.parent
+    default_input = str(_root / "output" / "glsl_shaders")
+    input_dir = sys.argv[1] if len(sys.argv) > 1 else default_input
+    output_file = sys.argv[2] if len(sys.argv) > 2 else str(_root / "output" / "converted_shaders.json")
     batch_convert(input_dir, output_file)

@@ -82,12 +82,12 @@ cd {PROJECT_ROOT} && python scripts/generate_android_project.py \
 Each conversion produces its own independent Android project under `output/{SHADER_NAME}App/`.
 
 ### Step 6: Ensure Gradle wrapper exists
-If the generated project lacks `gradlew`, copy the wrapper from a cached Gradle installation:
+If the generated project lacks `gradlew`, generate the wrapper using any installed Gradle:
 ```bash
 cd {PROJECT_ROOT}/output/{SHADER_NAME}App
-# If gradlew missing, generate wrapper:
-"C:/Users/caosh/.gradle/wrapper/dists/gradle-8.11.1-bin/..." ./gradle wrapper --gradle-version 8.11.1
+gradle wrapper --gradle-version 8.11.1
 ```
+Or copy from the skeleton project at `{PROJECT_ROOT}/output/StarNestApp/`.
 
 ### Step 7: Compile APK
 Build the debug APK:
@@ -128,3 +128,21 @@ The templates are designed to compile out-of-the-box on Android Studio with Grad
 - **`performClick()` override**: Required for accessibility when overriding `onTouchEvent`.
 - **Screenshot**: Uses `Canvas.draw()` instead of deprecated `getDrawingCache()`.
 - **Storage**: Uses `getExternalFilesDir()` (no permission needed) instead of external public storage.
+
+## Environment Requirements
+
+| Dependency | Version | Purpose |
+|---|---|---|
+| Python | 3.10+ | Type union syntax (`Path \| None`) |
+| Python packages | stdlib only | No third-party packages needed |
+| Gradle | 8.11+ | Building Android project (`gradle wrapper` or pre-existing `output/StarNestApp/gradlew`) |
+| Android SDK | AGP 8.7+, compileSdk 34 | Required by Gradle build |
+| `adb` | any | Installing APK to device |
+
+### Skeleton project
+`generate_android_project.py` copies base files from `output/StarNestApp/`. This directory **must exist** with:
+- `build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`
+- `gradlew`, `gradlew.bat`, `gradle/wrapper/`
+- `app/build.gradle.kts`, `app/proguard-rules.pro`, `app/src/main/AndroidManifest.xml`
+- `ShaderControls.java`, `ShaderData.java` (support classes)
+- Layout and value resources under `app/src/main/res/`

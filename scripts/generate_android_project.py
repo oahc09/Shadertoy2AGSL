@@ -103,7 +103,11 @@ def generate_project(output_dir: Path, shaders: list[dict], converted_file: Path
     print(f"Generating project at {output_dir} with {len(ok)} shaders")
 
     # Copy skeleton (Gradle, wrapper, manifest, support Java)
-    _copy_skeleton(output_dir)
+    if not _copy_skeleton(output_dir):
+        raise FileNotFoundError(
+            f"Skeleton project not found at {SKELETON_DIR}. "
+            f"Ensure output/StarNestApp/ exists with Gradle build files."
+        )
 
     java_dir = output_dir / "app/src/main/java/com/example/shadertoy"
     res_dir = output_dir / "app/src/main/res"

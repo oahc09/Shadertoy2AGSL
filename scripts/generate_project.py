@@ -2,15 +2,16 @@
 import json
 from pathlib import Path
 
-CONVERTED_FILE = Path("D:/AI/Shadertoy2AGSL/output/converted_shaders.json")
-OUTPUT_DIR = Path("D:/AI/Shadertoy2AGSL/output/StarNestApp")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+CONVERTED_FILE = PROJECT_ROOT / "output/converted_shaders.json"
+OUTPUT_DIR = PROJECT_ROOT / "output/StarNestApp"
 
 
 def escape_java_string(s: str) -> str:
     """Escape a string for use in a Java string literal."""
     s = s.replace("\\", "\\\\")
     s = s.replace('"', '\\"')
-    s = s = s.replace("\n", "\\n")
+    s = s.replace("\n", "\\n")
     s = s.replace("\t", "\\t")
     s = s.replace("\r", "\\r")
     return s
