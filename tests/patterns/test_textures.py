@@ -74,3 +74,51 @@ class TestConvertTextures:
         result, applied = convert_textures(glsl)
         assert "iChannel0.eval(uv)" in result
         assert applied is True
+
+    def test_converts_texture2D_call(self):
+        """texture2D(iChannel0, uv) -> iChannel0.eval(uv)."""
+        glsl = "fragColor = texture2D(iChannel0, uv);"
+        result, applied = convert_textures(glsl)
+        assert "iChannel0.eval(uv)" in result
+        assert "texture2D(" not in result
+        assert applied is True
+
+    def test_converts_texture2D_with_lod(self):
+        """texture2D(iChannel0, uv, lod) -> iChannel0.eval(uv), LOD dropped."""
+        glsl = "fragColor = texture2D(iChannel0, uv, 0.0);"
+        result, applied = convert_textures(glsl)
+        assert "iChannel0.eval(uv)" in result
+        assert "texture2D(" not in result
+        assert applied is True
+
+    def test_auto_injects_missing_uniform_shader_declaration(self):
+        """When texture(iChannel0, uv) is called without a declaration, one is injected."""
+        glsl = "fragColor = texture(iChannel0, uv);"
+        result, applied = convert_textures(glsl)
+        assert "uniform shader iChannel0;" in result
+        assert "iChannel0.eval(uv)" in result
+        assert applied is True
+
+    def test_does_not_duplicate_existing_shader_declaration(self):
+        """If uniform shader iChannel0 already exists, do not inject again."""
+        glsl = "uniform shader iChannel0;\nfragColor = iChannel0.eval(uv);"
+        result, applied = convert_textures(glsl)
+        assert result.count("uniform shader iChannel0;") == 1
+
+    def test_auto_injects_multiple_channels(self):
+        """Multiple missing channel declarations are all injected."""
+        glsl = "vec4 c0 = texture(iChannel0, uv);\nvec4 c1 = texture(iChannel1, uv);"
+        result, applied = convert_textures(glsl)
+        assert "uniform shader iChannel0;" in result
+        assert "uniform shader iChannel1;" in result
+        assert "iChannel0.eval(uv)" in result
+        assert "iChannel1.eval(uv)" in result
+        assert applied is True
+
+    def test_auto_injects_for_texture2D(self):
+        """texture2D calls also trigger auto-injection of uniform shader declarations."""
+        glsl = "fragColor = texture2D(iChannel2, uv);"
+        result, applied = convert_textures(glsl)
+        assert "uniform shader iChannel2;" in result
+        assert "iChannel2.eval(uv)" in result
+        assert applied is True

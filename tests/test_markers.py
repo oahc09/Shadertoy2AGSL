@@ -113,3 +113,28 @@ class TestScanMarkers:
         markers = scan_markers(source)
         discard_markers = [m for m in markers if m.kind == "discard"]
         assert len(discard_markers) == 0
+
+    def test_detects_textureLod(self):
+        """textureLod() calls are detected as unhandled."""
+        source = "half4 c = textureLod(iChannel0, uv, 2.0);"
+        markers = scan_markers(source)
+        assert any(m.kind == "texture_lod" for m in markers)
+
+    def test_detects_textureSize(self):
+        """textureSize() calls are detected as unhandled."""
+        source = "vec2 size = textureSize(iChannel0, 0);"
+        markers = scan_markers(source)
+        assert any(m.kind == "texture_size" for m in markers)
+
+    def test_detects_texelFetch(self):
+        """texelFetch() calls are detected as unhandled."""
+        source = "vec4 texel = texelFetch(iChannel0, ivec2(0,0), 0);"
+        markers = scan_markers(source)
+        assert any(m.kind == "texel_fetch" for m in markers)
+
+    def test_ignores_texture_funcs_in_comments(self):
+        """texture functions inside comments are not flagged."""
+        source = "// uses textureLod and textureSize\nfloat4 main() { return float4(1.0); }\n"
+        markers = scan_markers(source)
+        texture_markers = [m for m in markers if m.kind.startswith("texture_")]
+        assert len(texture_markers) == 0

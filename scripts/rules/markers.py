@@ -4,6 +4,7 @@ Scans the source for patterns the rule engine cannot convert:
     - discard statements (not supported in AGSL)
     - Multi-dimensional arrays (AGSL only supports 1D)
     - Recursive function calls (not supported in AGSL)
+    - Unsupported texture functions (textureLod, textureSize, texelFetch)
 
 Returns a list of Marker objects with location info and snippets.
 """
@@ -14,7 +15,7 @@ from dataclasses import dataclass
 @dataclass
 class Marker:
     """Represents an unhandled code fragment detected during conversion."""
-    kind: str        # "discard", "multi_dim_array", "recursion"
+    kind: str        # "discard", "multi_dim_array", "recursion", "texture_lod", etc.
     line: int        # 1-based line number
     snippet: str     # The relevant source line(s)
     description: str # Human-readable description of the issue
@@ -25,6 +26,17 @@ _DISCARD_RE = re.compile(r"\bdiscard\b")
 
 # Match multi-dimensional array declarations: type name[dim1][dim2]
 _MULTI_DIM_ARRAY_RE = re.compile(r"\w+\s+\w+\s*\[\s*\d+\s*\]\s*\[\s*\d+\s*\]")
+
+# Unsupported texture functions.
+_TEXTURE_LOD_RE = re.compile(r"\btextureLod\s*\(")
+_TEXTURE_SIZE_RE = re.compile(r"\btextureSize\s*\(")
+_TEXEL_FETCH_RE = re.compile(r"\btexelFetch\s*\(")
+
+_TEXTURE_MARKER_DEFS = [
+    (_TEXTURE_LOD_RE, "texture_lod", "AGSL does not support 'textureLod()'. LOD control is not available for shader inputs."),
+    (_TEXTURE_SIZE_RE, "texture_size", "AGSL does not support 'textureSize()'. Use hardcoded texture dimensions instead."),
+    (_TEXEL_FETCH_RE, "texel_fetch", "AGSL does not support 'texelFetch()'. Use .eval() with normalized coordinates instead."),
+]
 
 # Match single-line comments.
 _SINGLE_LINE_COMMENT_RE = re.compile(r"//.*$", re.MULTILINE)
@@ -137,6 +149,17 @@ def _detect_recursion(source: str, cleaned: str) -> list[Marker]:
     return markers
 
 
+def _detect_unhandled_texture_funcs(source: str, cleaned: str) -> list[Marker]:
+    """Detect unsupported texture function calls."""
+    markers = []
+    for regex, kind, description in _TEXTURE_MARKER_DEFS:
+        for match in regex.finditer(cleaned):
+            line = _get_line_number(source, match.start())
+            snippet = _get_line_content(source, line)
+            markers.append(Marker(kind=kind, line=line, snippet=snippet, description=description))
+    return markers
+
+
 def scan_markers(source: str) -> list[Marker]:
     """Scan source for unhandled patterns requiring AI fallback.
 
@@ -151,6 +174,7 @@ def scan_markers(source: str) -> list[Marker]:
     markers.extend(_detect_discard(source, cleaned))
     markers.extend(_detect_multi_dim_arrays(source, cleaned))
     markers.extend(_detect_recursion(source, cleaned))
+    markers.extend(_detect_unhandled_texture_funcs(source, cleaned))
     # Sort by line number.
     markers.sort(key=lambda m: m.line)
     return markers

@@ -14,7 +14,8 @@
       "Bash(python -m pytest tests/patterns/test_preprocessor.py -v)",
       "Bash(python -m pytest tests/patterns/test_coordinates.py -v)",
       "Bash(python *)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "WebSearch"
     ]
   }
 }

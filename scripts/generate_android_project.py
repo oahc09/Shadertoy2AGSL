@@ -266,9 +266,13 @@ public class MainActivity extends AppCompatActivity implements ShaderControls.Co
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapShader;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RuntimeShader;
+import android.graphics.Shader;
 import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -294,6 +298,10 @@ public class ShaderView extends View {
     private float currentFps = 0f;
     private final Paint fpsPaint = new Paint();
 
+    // iChannel texture support
+    private final java.util.HashMap<String, BitmapShader> channelShaders = new java.util.HashMap<>();
+    private static final int NOISE_SIZE = 256;
+
     public ShaderView(Context context) {
         super(context);
         initFpsPaint();
@@ -316,12 +324,91 @@ public class ShaderView extends View {
         fpsPaint.setTypeface(android.graphics.Typeface.MONOSPACE);
     }
 
+    private static Bitmap createNoiseBitmap(int seed, boolean grayscale) {
+        java.util.Random random = new java.util.Random(seed);
+        int[] pixels = new int[NOISE_SIZE * NOISE_SIZE];
+        for (int i = 0; i < pixels.length; i++) {
+            if (grayscale) {
+                int v = random.nextInt(256);
+                pixels[i] = 0xFF000000 | (v << 16) | (v << 8) | v;
+            } else {
+                pixels[i] = 0xFF000000
+                    | (random.nextInt(256) << 16)
+                    | (random.nextInt(256) << 8)
+                    | random.nextInt(256);
+            }
+        }
+        Bitmap bitmap = Bitmap.createBitmap(NOISE_SIZE, NOISE_SIZE, Bitmap.Config.ARGB_8888);
+        bitmap.setPixels(pixels, 0, NOISE_SIZE, 0, 0, NOISE_SIZE, NOISE_SIZE);
+        return bitmap;
+    }
+
+    private static Bitmap createCheckerboardBitmap() {
+        int[] pixels = new int[NOISE_SIZE * NOISE_SIZE];
+        int tileSize = NOISE_SIZE / 8;
+        for (int y = 0; y < NOISE_SIZE; y++) {
+            for (int x = 0; x < NOISE_SIZE; x++) {
+                boolean even = ((x / tileSize) + (y / tileSize)) % 2 == 0;
+                int v = even ? 0xFFFFFFFF : 0xFF000000;
+                pixels[y * NOISE_SIZE + x] = v;
+            }
+        }
+        Bitmap bitmap = Bitmap.createBitmap(NOISE_SIZE, NOISE_SIZE, Bitmap.Config.ARGB_8888);
+        bitmap.setPixels(pixels, 0, NOISE_SIZE, 0, 0, NOISE_SIZE, NOISE_SIZE);
+        return bitmap;
+    }
+
+    private static Bitmap createGradientBitmap() {
+        int[] pixels = new int[NOISE_SIZE * NOISE_SIZE];
+        for (int y = 0; y < NOISE_SIZE; y++) {
+            int v = (int) (y * 255f / (NOISE_SIZE - 1));
+            int pixel = 0xFF000000 | (v << 16) | (v << 8) | v;
+            for (int x = 0; x < NOISE_SIZE; x++) {
+                pixels[y * NOISE_SIZE + x] = pixel;
+            }
+        }
+        Bitmap bitmap = Bitmap.createBitmap(NOISE_SIZE, NOISE_SIZE, Bitmap.Config.ARGB_8888);
+        bitmap.setPixels(pixels, 0, NOISE_SIZE, 0, 0, NOISE_SIZE, NOISE_SIZE);
+        return bitmap;
+    }
+
+    private static Bitmap getChannelBitmap(int index) {
+        switch (index) {
+            case 0: return createNoiseBitmap(42, true);
+            case 1: return createNoiseBitmap(137, false);
+            case 2: return createCheckerboardBitmap();
+            default: return createGradientBitmap();
+        }
+    }
+
+    private void setupChannelShaders(String agslCode) {
+        channelShaders.clear();
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+            "uniform\\\\s+shader\\\\s+iChannel(\\\\d+)\\\\s*;");
+        java.util.regex.Matcher matcher = pattern.matcher(agslCode);
+        while (matcher.find()) {
+            int index = Integer.parseInt(matcher.group(1));
+            String channelName = "iChannel" + index;
+            if (!channelShaders.containsKey(channelName)) {
+                Bitmap bmp = getChannelBitmap(index);
+                BitmapShader bitmapShader = new BitmapShader(
+                    bmp, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+                Matrix matrix = new Matrix();
+                matrix.setScale(NOISE_SIZE, -NOISE_SIZE);
+                matrix.postTranslate(0, NOISE_SIZE);
+                bitmapShader.setLocalMatrix(matrix);
+                channelShaders.put(channelName, bitmapShader);
+            }
+        }
+    }
+
     public void loadShader(String agslCode) {
         stopAnimation();
         elapsedTime = 0f;
         try {
             shader = new RuntimeShader(agslCode);
             paint.setShader(shader);
+            setupChannelShaders(agslCode);
         } catch (Exception e) {
             e.printStackTrace();
             shader = null;
@@ -380,6 +467,10 @@ public class ShaderView extends View {
         try { shader.setFloatUniform("iResolution", (float) w, (float) h, 1.0f); } catch (Exception ignored) {}
         try { shader.setFloatUniform("iTime", elapsedTime); } catch (Exception ignored) {}
         try { shader.setFloatUniform("iMouse", iMouseX, iMouseY, iMouseZ, iMouseW); } catch (Exception ignored) {}
+
+        for (String ch : channelShaders.keySet()) {
+            try { shader.setInputShader(ch, channelShaders.get(ch)); } catch (Exception ignored) {}
+        }
 
         canvas.drawPaint(paint);
 
